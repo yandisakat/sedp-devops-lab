@@ -6,7 +6,7 @@ shows. Keep screenshots in `evidence/img/`.
 
 | Milestone | Evidence file | Done |
 | --- | --- | --- |
-| 1 App and container | | |
+| 1 App and container | [01-app-container.md](01-app-container.md) | ✅ |
 | 2 Kubernetes | | |
 | 3 Helm | | |
 | 4 GitOps with Argo CD | | |
