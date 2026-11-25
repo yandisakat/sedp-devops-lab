@@ -12,7 +12,13 @@ import random
 import time
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Histogram,
+    generate_latest,
+)
 
 APP_VERSION = os.getenv("APP_VERSION", "dev")
 FAIL_RATE = float(os.getenv("FAIL_RATE", "0"))          # 0.0–1.0 share of /work calls that fail
@@ -21,10 +27,15 @@ STARTUP_DELAY_S = float(os.getenv("STARTUP_DELAY_S", "0"))
 
 STARTED_AT = time.monotonic()
 
-REQUESTS = Counter("lab_requests_total", "HTTP requests", ["path", "status"])
+# A dedicated registry (rather than prometheus_client's global default) keeps
+# re-imports of this module - e.g. importlib.reload() in tests - from
+# colliding with metrics registered by the previous import.
+REGISTRY = CollectorRegistry()
+REQUESTS = Counter("lab_requests_total", "HTTP requests", ["path", "status"], registry=REGISTRY)
 LATENCY = Histogram(
     "lab_request_duration_seconds", "HTTP request latency", ["path"],
     buckets=(0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5),
+    registry=REGISTRY,
 )
 
 app = FastAPI(title="lab-app", version=APP_VERSION)
@@ -73,4 +84,4 @@ def readyz(response: Response):
 
 @app.get("/metrics")
 def metrics():
-    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+    return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
