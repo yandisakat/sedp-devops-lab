@@ -1,5 +1,5 @@
 # Argo CD Application for the dev environment.
-# Replace YOUR_GITHUB_USER, then: kubectl apply -f gitops/argocd/lab-app-dev.yaml
+# Apply: kubectl apply -f gitops/argocd/lab-app-dev.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_GITHUB_USER/sedp-devops-lab.git
+    repoURL: https://github.com/yandisakat/sedp-devops-lab.git
     targetRevision: staging          # environment branch, like ADSS
     path: charts/lab-app
     helm:
