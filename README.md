@@ -36,20 +36,6 @@ answer without notes) and **ADSS link** (where the real system does the same thi
 | 7 | [Argo Rollouts and Workflows](docs/07-argo.md) | A canary that rolls itself back; CI as a workflow DAG |
 | 8 | [Git and Bash](docs/08-git-bash.md) | Rebase, conflict, cherry-pick, bisect, reflog; a script of your own |
 
-## Suggested schedule (target date on OPS-3731: 2 Dec 2026)
-
-| Day | Milestones |
-| --- | --- |
-| Wed 25 Nov | 0, 1 |
-| Thu 26 Nov | 2 |
-| Fri 27 Nov | 3, 4 |
-| Mon 30 Nov | 5, 6 |
-| Tue 1 Dec | 7, 8, rehearse the demo |
-| Wed 2 Dec | Demo to Dieter (`docs/demo-script.md`) |
-
-If time runs short, keep the priority 1 objectives (milestones 1, 2, 4, 5, 6) and ask
-Dieter to move the date for the rest.
-
 ## Layout
 
 ```
