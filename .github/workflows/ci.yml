@@ -1,0 +1,37 @@
+# Runs on every pull request: the same checks as the Argo Workflow, on GitHub.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [staging, main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck
+        run: shellcheck -x -P scripts scripts/*.sh
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Unit tests
+        working-directory: app
+        run: |
+          pip install -r requirements-dev.txt
+          python -m pytest -q
+
+      - uses: azure/setup-helm@v4
+      - name: Helm lint and render every environment
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          for env in dev prod; do
+            helm lint charts/lab-app -f "gitops/envs/$env/values.yaml"
+            helm template lab-app charts/lab-app -f "gitops/envs/$env/values.yaml" \
+              | ./kubeconform -strict -summary -ignore-missing-schemas
+          done
+          ./kubeconform -strict -summary k8s/
+
+      - name: Build image
+        run: docker build -t lab-app:ci app

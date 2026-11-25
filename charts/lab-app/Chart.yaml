@@ -1,0 +1,6 @@
+apiVersion: v2
+name: lab-app
+description: The SEDP DevOps lab service, packaged once and configured per environment.
+type: application
+version: 0.1.0        # the chart's own version
+appVersion: "1.0.0"   # default app version when image.tag is not set

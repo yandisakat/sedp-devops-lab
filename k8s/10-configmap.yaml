@@ -1,0 +1,13 @@
+# Behaviour knobs, kept out of the image. Change one, then restart the pods
+# (kubectl -n lab rollout restart deploy/lab-app): env vars are read at start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-app
+  namespace: lab
+  labels:
+    app.kubernetes.io/name: lab-app
+data:
+  FAIL_RATE: "0"
+  EXTRA_LATENCY_MS: "0"
+  STARTUP_DELAY_S: "10"

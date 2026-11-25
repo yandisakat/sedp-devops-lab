@@ -1,0 +1,26 @@
+# Argo CD Application for the dev environment.
+# Replace YOUR_GITHUB_USER, then: kubectl apply -f gitops/argocd/lab-app-dev.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lab-app-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_GITHUB_USER/sedp-devops-lab.git
+    targetRevision: staging          # environment branch, like ADSS
+    path: charts/lab-app
+    helm:
+      releaseName: lab-app
+      valueFiles:
+        - ../../gitops/envs/dev/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab-dev
+  syncPolicy:
+    automated:
+      prune: true      # delete what git no longer declares
+      selfHeal: true   # undo manual changes in the cluster
+    syncOptions:
+      - CreateNamespace=true

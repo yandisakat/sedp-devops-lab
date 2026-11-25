@@ -1,0 +1,28 @@
+# Alerts for the dev environment. Apply: kubectl apply -f sre/prometheus-rule.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lab-app-slo
+  namespace: lab-dev
+spec:
+  groups:
+    - name: lab-app.slo
+      rules:
+        - record: lab:work_error_ratio:rate5m
+          expr: |
+            sum(rate(lab_requests_total{namespace="lab-dev",path="/work",status=~"5.."}[5m]))
+            / sum(rate(lab_requests_total{namespace="lab-dev",path="/work"}[5m]))
+        # Burn rate 14.4x = a 30-day 1% budget gone in ~2 days. Short window for the lab.
+        - alert: LabAppErrorBudgetBurn
+          expr: lab:work_error_ratio:rate5m > (14.4 * 0.01)
+          for: 2m
+          labels: { severity: page }
+          annotations:
+            summary: "lab-app is burning its error budget fast"
+            description: "{{ $value | humanizePercentage }} of /work requests are failing (SLO allows 1%)."
+        - alert: LabAppNoReadyPods
+          expr: sum(kube_deployment_status_replicas_available{namespace="lab-dev",deployment="lab-app"}) == 0
+          for: 1m
+          labels: { severity: page }
+          annotations:
+            summary: "lab-app has no ready pods"

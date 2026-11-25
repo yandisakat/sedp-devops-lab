@@ -1,0 +1,32 @@
+# One OpenTelemetry Collector: receives OTLP from instrumented pods, batches,
+# drops sensitive headers, and forwards traces to Jaeger.
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+  namespace: observability
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: { endpoint: 0.0.0.0:4317 }
+          http: { endpoint: 0.0.0.0:4318 }
+    processors:
+      batch: {}
+      attributes/redact:
+        actions:
+          - { key: http.request.header.authorization, action: delete }
+          - { key: http.request.header.cookie, action: delete }
+    exporters:
+      otlp/jaeger:
+        endpoint: jaeger.observability.svc:4317
+        tls: { insecure: true }
+      debug: { verbosity: basic }
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [attributes/redact, batch]
+          exporters: [otlp/jaeger, debug]

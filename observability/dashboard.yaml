@@ -1,0 +1,30 @@
+# Grafana dashboard loaded by the sidecar (label grafana_dashboard=1).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-app-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  lab-app.json: |
+    {
+      "title": "lab-app golden signals",
+      "uid": "lab-app",
+      "schemaVersion": 39,
+      "time": { "from": "now-30m", "to": "now" },
+      "templating": { "list": [
+        { "name": "ns", "type": "query", "datasource": "Prometheus",
+          "query": "label_values(lab_requests_total, namespace)", "refresh": 2 }
+      ]},
+      "panels": [
+        { "type": "timeseries", "title": "Traffic (req/s)", "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+          "targets": [{ "expr": "sum by (path) (rate(lab_requests_total{namespace=\"$ns\"}[1m]))", "legendFormat": "{{path}}" }] },
+        { "type": "timeseries", "title": "Errors (% of /work)", "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "percent" } },
+          "targets": [{ "expr": "100 * sum(rate(lab_requests_total{namespace=\"$ns\",path=\"/work\",status=~\"5..\"}[1m])) / sum(rate(lab_requests_total{namespace=\"$ns\",path=\"/work\"}[1m]))" }] },
+        { "type": "timeseries", "title": "Latency p95 (s)", "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(lab_request_duration_seconds_bucket{namespace=\"$ns\",path=\"/work\"}[5m])))" }] }
+      ]
+    }

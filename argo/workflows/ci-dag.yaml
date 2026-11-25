@@ -1,0 +1,64 @@
+# A CI pipeline as an Argo Workflow: clone once, then lint/test steps run in
+# parallel where they can (a DAG), and the chart check waits for both.
+# Submit:  argo submit -n argo argo/workflows/ci-dag.yaml -p repo=https://github.com/YOUR_GITHUB_USER/sedp-devops-lab.git --watch
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: lab-ci-
+  namespace: argo
+spec:
+  serviceAccountName: lab-ci
+  entrypoint: ci
+  arguments:
+    parameters:
+      - name: repo
+      - name: revision
+        value: staging
+  volumeClaimTemplates:
+    - metadata: { name: workspace }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 1Gi } }
+  templates:
+    - name: ci
+      dag:
+        tasks:
+          - name: clone
+            template: clone
+          - name: shellcheck
+            template: shellcheck
+            depends: clone
+          - name: unit-tests
+            template: unit-tests
+            depends: clone
+          - name: helm-lint
+            template: helm-lint
+            depends: shellcheck && unit-tests
+
+    - name: clone
+      container:
+        image: alpine/git:latest   # pin a version once you have checked the tags
+        command: [sh, -c]
+        args: ["git clone --depth 1 --branch {{workflow.parameters.revision}} {{workflow.parameters.repo}} /work/src"]
+        volumeMounts: [{ name: workspace, mountPath: /work }]
+
+    - name: shellcheck
+      container:
+        image: koalaman/shellcheck-alpine:v0.10.0
+        command: [sh, -c]
+        args: ["cd /work/src && shellcheck -x -P scripts scripts/*.sh"]
+        volumeMounts: [{ name: workspace, mountPath: /work }]
+
+    - name: unit-tests
+      container:
+        image: python:3.12-slim
+        command: [sh, -c]
+        args: ["cd /work/src/app && pip install -q -r requirements-dev.txt && python -m pytest -q -p no:cacheprovider"]
+        volumeMounts: [{ name: workspace, mountPath: /work }]
+
+    - name: helm-lint
+      container:
+        image: alpine/helm:3.16.4
+        command: [sh, -c]
+        args: ["cd /work/src && helm lint charts/lab-app -f gitops/envs/dev/values.yaml && helm template lab-app charts/lab-app -f gitops/envs/prod/values.yaml > /dev/null"]
+        volumeMounts: [{ name: workspace, mountPath: /work }]

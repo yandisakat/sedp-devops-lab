@@ -1,0 +1,22 @@
+# Tells the OpenTelemetry Operator how to instrument pods that opt in with
+#   instrumentation.opentelemetry.io/inject-python: "observability/python"
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: python
+  namespace: observability
+spec:
+  exporter:
+    endpoint: http://otel-collector.observability.svc:4318   # Python SDK sends OTLP/HTTP
+  propagators: [tracecontext, baggage]
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"          # keep every trace in the lab; lower this in production
+  python:
+    env:
+      - name: OTEL_PYTHON_EXCLUDED_URLS
+        value: "healthz,readyz,metrics"   # probes and scrapes are noise in traces
+      # Record these request headers as span attributes. The collector then deletes
+      # authorization before export: compare user-agent (kept) with authorization (gone).
+      - name: OTEL_INSTRUMENTATION_HTTP_CAPTURE_HEADERS_SERVER_REQUEST
+        value: "authorization,user-agent"

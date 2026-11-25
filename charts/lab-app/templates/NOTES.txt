@@ -1,0 +1,5 @@
+lab-app {{ include "lab-app.version" . }} installed in namespace {{ .Release.Namespace }}.
+
+Try it:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "lab-app.name" . }} 8080:{{ .Values.service.port }}
+  curl localhost:8080/

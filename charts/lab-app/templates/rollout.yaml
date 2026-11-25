@@ -1,0 +1,32 @@
+{{- if .Values.rollout.enabled }}
+# Argo Rollouts canary: shift traffic in steps and (optionally) let Prometheus
+# decide whether to continue or roll back.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "lab-app.name" . }}
+  labels:
+    {{- include "lab-app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "lab-app.selectorLabels" . | nindent 6 }}
+  strategy:
+    canary:
+      {{- if .Values.rollout.analysis.enabled }}
+      analysis:
+        templates:
+          - templateName: {{ include "lab-app.name" . }}-success-rate
+        startingStep: 1
+      {{- end }}
+      steps:
+        - setWeight: 25
+        - pause: {}               # wait for a human: kubectl argo rollouts promote lab-app -n lab
+        - setWeight: 50
+        - pause: { duration: 60s }
+        - setWeight: 100
+  template:
+    {{- include "lab-app.podTemplate" . | nindent 4 }}
+{{- end }}

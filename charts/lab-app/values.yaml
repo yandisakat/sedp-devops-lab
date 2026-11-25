@@ -1,0 +1,32 @@
+# Defaults. Each environment overrides only what differs (gitops/envs/<env>/values.yaml).
+replicaCount: 2
+
+image:
+  repository: lab-app
+  tag: ""                  # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+# Env vars read by the app at start (see app/main.py).
+config:
+  FAIL_RATE: "0"
+  EXTRA_LATENCY_MS: "0"
+  STARTUP_DELAY_S: "10"
+
+service:
+  port: 80
+
+resources:
+  requests: { cpu: 50m, memory: 64Mi }
+  limits:   { memory: 256Mi }
+
+podAnnotations: {}         # milestone 5 adds the OpenTelemetry inject annotation here
+
+serviceMonitor:
+  enabled: false           # milestone 5: let Prometheus scrape /metrics
+
+# Milestone 7: render an Argo Rollouts canary instead of a plain Deployment.
+rollout:
+  enabled: false
+  analysis:
+    enabled: false         # needs Prometheus (milestone 5)
+    successRate: "0.95"

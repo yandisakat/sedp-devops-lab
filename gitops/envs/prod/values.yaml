@@ -1,0 +1,6 @@
+# prod: synced by Argo CD from `main`. Reaches here only by merging staging -> main.
+replicaCount: 3
+image:
+  tag: "1.0.0"
+config:
+  STARTUP_DELAY_S: "10"

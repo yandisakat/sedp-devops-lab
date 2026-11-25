@@ -1,0 +1,6 @@
+# dev: synced by Argo CD from the `staging` branch. Change this file in a PR to deploy.
+replicaCount: 2
+image:
+  tag: "1.0.0"
+config:
+  STARTUP_DELAY_S: "5"

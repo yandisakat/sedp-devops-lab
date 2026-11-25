@@ -1,0 +1,23 @@
+{{- if and .Values.rollout.enabled .Values.rollout.analysis.enabled }}
+# Fails the canary if fewer than successRate of /work requests succeed.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "lab-app.name" . }}-success-rate
+  labels:
+    {{- include "lab-app.labels" . | nindent 4 }}
+spec:
+  metrics:
+    - name: success-rate
+      interval: 30s
+      count: 4
+      failureLimit: 1
+      successCondition: result[0] >= {{ .Values.rollout.analysis.successRate }}
+      provider:
+        prometheus:
+          address: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+          query: |
+            sum(rate(lab_requests_total{namespace="{{ .Release.Namespace }}",path="/work",status!~"5.."}[1m]))
+            /
+            sum(rate(lab_requests_total{namespace="{{ .Release.Namespace }}",path="/work"}[1m]))
+{{- end }}
